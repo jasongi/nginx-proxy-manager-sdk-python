@@ -1,0 +1,164 @@
+import { ProxyHosts } from './proxy-hosts.js';
+import { Certificates } from './certificates.js';
+import type {
+  NpmClientConfig,
+  NpmApiErrorBody,
+  TokenResponse,
+  AuthResponse,
+  RequestFn,
+} from './types.js';
+
+export class NpmApiError extends Error {
+  constructor(
+    public statusCode: number,
+    public body: NpmApiErrorBody | null,
+  ) {
+    const msg = body?.error?.message ?? `NPM API responded with ${statusCode}`;
+    super(msg);
+    this.name = 'NpmApiError';
+  }
+}
+
+export class NpmClient {
+  private baseUrl: string;
+  private token: string | null;
+  private tokenExpires: Date | null = null;
+  private email: string | null;
+  private password: string | null;
+
+  public readonly proxyHosts: ProxyHosts;
+  public readonly certificates: Certificates;
+
+  constructor(config: NpmClientConfig) {
+    this.baseUrl = config.baseUrl.replace(/\/+$/, '');
+    this.token = config.token ?? null;
+    this.email = config.email ?? null;
+    this.password = config.password ?? null;
+
+    const requestFn: RequestFn = this.request.bind(this);
+    this.proxyHosts = new ProxyHosts(requestFn);
+    this.certificates = new Certificates(requestFn);
+  }
+
+  /**
+   * Authenticate with email and password. Returns the token response.
+   * Called automatically on first request if credentials were provided.
+   */
+  async login(email?: string, password?: string): Promise<TokenResponse> {
+    const identity = email ?? this.email;
+    const secret = password ?? this.password;
+
+    if (!identity || !secret) {
+      throw new Error('Email and password are required for login.');
+    }
+
+    const res = await fetch(`${this.baseUrl}/api/tokens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identity, secret }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => null) as NpmApiErrorBody | null;
+      throw new NpmApiError(res.status, body);
+    }
+
+    const data = await res.json() as AuthResponse;
+
+    if ('requires_2fa' in data) {
+      throw new Error(
+        '2FA is enabled on this NPM account. Pass a pre-authenticated token instead.',
+      );
+    }
+
+    this.token = data.token;
+    this.tokenExpires = new Date(data.expires);
+    this.email = identity;
+    this.password = secret;
+
+    return data;
+  }
+
+  /**
+   * Refresh the current token. Requires a valid (non-expired) token.
+   */
+  async refreshToken(): Promise<TokenResponse> {
+    const data = await this.request<TokenResponse>('GET', '/api/tokens');
+    this.token = data.token;
+    this.tokenExpires = new Date(data.expires);
+    return data;
+  }
+
+  /**
+   * Core request method. Handles auth headers, auto-login, and error parsing.
+   */
+  private async request<T>(
+    method: string,
+    path: string,
+    options?: {
+      body?: unknown;
+      params?: Record<string, string>;
+      timeout?: number;
+    },
+  ): Promise<T> {
+    await this.ensureAuth();
+
+    let url = `${this.baseUrl}${path}`;
+
+    if (options?.params) {
+      const search = new URLSearchParams(options.params);
+      url += `?${search.toString()}`;
+    }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    const controller = new AbortController();
+    const timeoutMs = options?.timeout ?? 30_000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: options?.body ? JSON.stringify(options.body) : undefined,
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null) as NpmApiErrorBody | null;
+        throw new NpmApiError(res.status, body);
+      }
+
+      return await res.json() as T;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
+   * Ensures a valid token is available before making a request.
+   * Logs in automatically if credentials are available and token is missing or expired.
+   */
+  private async ensureAuth(): Promise<void> {
+    if (this.token && this.tokenExpires && this.tokenExpires > new Date()) {
+      return;
+    }
+
+    if (this.email && this.password) {
+      await this.login();
+      return;
+    }
+
+    if (!this.token) {
+      throw new Error(
+        'No authentication available. Provide a token or email+password.',
+      );
+    }
+  }
+}
