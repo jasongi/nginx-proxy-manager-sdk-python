@@ -4,6 +4,7 @@ import type {
   CreateCertificatePayload,
   TestHttpResult,
 } from './types.js';
+import { validateDomainNames } from './validation.js';
 
 const CERT_TIMEOUT = 900_000; // 15 minutes, matching NPM backend
 
@@ -58,6 +59,11 @@ export class Certificates {
    * Note: This can take up to 15 minutes for Let's Encrypt provisioning.
    */
   async create(payload: CreateCertificatePayload): Promise<Certificate> {
+    // Validate domain names for Let's Encrypt certificates
+    if (payload.provider === 'letsencrypt' && 'domain_names' in payload) {
+      validateDomainNames(payload.domain_names);
+    }
+
     return this.request<Certificate>('POST', '/api/nginx/certificates', {
       body: payload,
       timeout: CERT_TIMEOUT,
@@ -88,6 +94,9 @@ export class Certificates {
    * Use this as a pre-flight check before creating a Let's Encrypt cert.
    */
   async testHttp(domains: string[]): Promise<TestHttpResult> {
+    // Validate domains before testing
+    validateDomainNames(domains);
+
     return this.request<TestHttpResult>('POST', '/api/nginx/certificates/test-http', {
       body: { domains },
     });

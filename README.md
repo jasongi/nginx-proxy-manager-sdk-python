@@ -239,6 +239,71 @@ try {
 
 Default timeout is 30 seconds for standard API calls. Certificate creation and renewal use a 15-minute timeout to accommodate Let's Encrypt provisioning delays.
 
+## Security Best Practices
+
+### Credential Management
+
+- **Clear credentials when done**: Call `client.clearCredentials()` when you're finished with the client to remove sensitive data from memory.
+  ```typescript
+  try {
+    await client.proxyHosts.list();
+  } finally {
+    client.clearCredentials();
+  }
+  ```
+
+- **Use tokens when possible**: Prefer using Bearer tokens over email/password to minimize credential exposure.
+
+- **Avoid logging credentials**: Never log the client configuration or credentials to files or console.
+
+### Input Validation
+
+The SDK provides **defensive validation** to help prevent breaking your nginx configuration. These validations are designed to catch common mistakes and protect against injection attacks when passing untrusted user input through the SDK.
+
+The SDK validates:
+- **Domain names**: Rejects characters that would break nginx `server_name` directive (spaces, semicolons, braces). Allows wildcards (*.example.com), single-label names (localhost), and flexible formats.
+- **Advanced nginx configs**: Checks for patterns that would break out of the server block context (closing and reopening server/http blocks).
+- **URLs**: BaseURL must use http:// or https:// protocol.
+
+**Note**: These are basic validations to prevent configuration corruption. Since you control your own Nginx Proxy Manager instance, you have full authority over your configuration. The validations help prevent accidental mistakes but are not comprehensive security controls.
+
+### Handling User Input
+
+When accepting domain names or nginx config from end users (e.g., in a web application), **always sanitize and validate** the input before passing it to the SDK:
+
+```typescript
+// ✅ Good - controlled configuration
+await client.proxyHosts.create({
+  domain_names: ['app.example.com'],
+  forward_host: '127.0.0.1',
+  forward_port: 3000,
+  advanced_config: 'proxy_read_timeout 86400;',
+});
+
+// ⚠️ Be careful with user input
+function createProxyHost(userDomain: string, userConfig: string) {
+  // Example: Implement your own validation layer for user input
+  // The SDK provides basic checks, but you should add application-specific validation
+  
+  // Whitelist approach - only allow known safe patterns
+  if (!/^[a-zA-Z0-9.-]+$/.test(userDomain)) {
+    throw new Error('Invalid domain format');
+  }
+  
+  // For advanced_config, consider:
+  // - Whitelisting specific nginx directives
+  // - Restricting to predefined config templates
+  // - Not allowing user input at all in production
+  
+  await client.proxyHosts.create({
+    domain_names: [userDomain],
+    forward_host: '127.0.0.1',
+    forward_port: 3000,
+    advanced_config: userConfig, // SDK will validate for config-breaking patterns
+  });
+}
+```
+
 ## TypeScript
 
 Full type definitions are included. All payload interfaces are exported:

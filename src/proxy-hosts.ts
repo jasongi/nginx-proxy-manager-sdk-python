@@ -4,6 +4,7 @@ import type {
   CreateProxyHostPayload,
   UpdateProxyHostPayload,
 } from './types.js';
+import { validateAdvancedConfig, validateDomainNames } from './validation.js';
 
 export class ProxyHosts {
   constructor(private request: RequestFn) {}
@@ -51,6 +52,19 @@ export class ProxyHosts {
    * Set it to `0` or omit for no SSL.
    */
   async create(payload: CreateProxyHostPayload): Promise<ProxyHost> {
+    // Validate domain names
+    validateDomainNames(payload.domain_names);
+    
+    // Validate advanced config for security
+    validateAdvancedConfig(payload.advanced_config);
+    
+    // Validate location advanced configs
+    if (payload.locations) {
+      for (const location of payload.locations) {
+        validateAdvancedConfig(location.advanced_config);
+      }
+    }
+
     return this.request<ProxyHost>('POST', '/api/nginx/proxy-hosts', {
       body: payload,
     });
@@ -60,6 +74,19 @@ export class ProxyHosts {
    * Update an existing proxy host. Only include the fields you want to change.
    */
   async update(id: number, payload: UpdateProxyHostPayload): Promise<ProxyHost> {
+    // Validate domain names if provided
+    validateDomainNames(payload.domain_names);
+    
+    // Validate advanced config for security
+    validateAdvancedConfig(payload.advanced_config);
+    
+    // Validate location advanced configs
+    if (payload.locations) {
+      for (const location of payload.locations) {
+        validateAdvancedConfig(location.advanced_config);
+      }
+    }
+
     return this.request<ProxyHost>('PUT', `/api/nginx/proxy-hosts/${id}`, {
       body: payload,
     });
