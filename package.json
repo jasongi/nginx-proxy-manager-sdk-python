@@ -1,6 +1,6 @@
 {
   "name": "nginx-proxy-manager-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript SDK for Nginx Proxy Manager API. Programmatic proxy host management, SSL provisioning, and DNS verification.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -38,8 +38,16 @@
     "reverse-proxy",
     "sdk"
   ],
-  "author": "AALA Solutions",
+  "author": "AALA Solutions (https://aalasolutions.com)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aalasolutions/nginx-proxy-manager-sdk.git"
+  },
+  "homepage": "https://github.com/aalasolutions/nginx-proxy-manager-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/aalasolutions/nginx-proxy-manager-sdk/issues"
+  },
   "devDependencies": {
     "@types/node": "^25.2.3",
     "tsup": "^8.0.0",
