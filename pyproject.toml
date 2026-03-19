@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nginx-proxy-manager-sdk"
+version = "0.1.0"
+description = "Modern Python SDK for the Nginx Proxy Manager API."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "AALA Solutions" }]
+requires-python = ">=3.10"
+dependencies = []
+keywords = ["nginx", "proxy", "nginx-proxy-manager", "sdk", "api"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Internet :: Proxy Servers",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/aalasolutions/nginx-proxy-manager-sdk"
+Documentation = "https://github.com/aalasolutions/nginx-proxy-manager-sdk-python"
+Repository = "https://github.com/aalasolutions/nginx-proxy-manager-sdk-python"
+Issues = "https://github.com/aalasolutions/nginx-proxy-manager-sdk-python/issues"
+
+[project.optional-dependencies]
+dev = [
+  "black>=25.1.0",
+  "build>=1.2.2",
+  "flake8>=7.1.1",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.6.7",
+  "mkdocstrings[python]>=0.28.2",
+  "pre-commit>=4.1.0",
+  "pytest>=8.3.5",
+  "twine>=6.1.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [".git", ".venv", "build", "dist"]
