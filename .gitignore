@@ -1,3 +1,8 @@
-node_modules/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+build/
 dist/
-*.tsbuildinfo
+src/*.egg-info/
+src/nginx_proxy_manager_sdk.egg-info/
