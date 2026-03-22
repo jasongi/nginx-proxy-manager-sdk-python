@@ -205,7 +205,7 @@ class NginxProxyManagerClient:
 
     @staticmethod
     def _parse_access_list(data: dict[str, Any] | None) -> AccessList | None:
-        return AccessList(**data) if data else None
+        return AccessList.from_mapping(data)
 
     @staticmethod
     def _parse_certificate(data: dict[str, Any]) -> Certificate:

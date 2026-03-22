@@ -49,7 +49,29 @@ class AccessList:
     modified_on: str
     owner_user_id: int
     name: str
+    is_deleted: bool | None = None
+    satisfy_any: bool | None = None
+    pass_auth: bool | None = None
     meta: dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_mapping(cls, mapping: dict[str, Any] | None) -> "AccessList" | None:
+        if not mapping:
+            return None
+        mapping = dict(mapping)
+        known = {
+            "id": mapping.pop("id"),
+            "created_on": mapping.pop("created_on"),
+            "modified_on": mapping.pop("modified_on"),
+            "owner_user_id": mapping.pop("owner_user_id"),
+            "name": mapping.pop("name"),
+            "is_deleted": mapping.pop("is_deleted", None),
+            "satisfy_any": mapping.pop("satisfy_any", None),
+            "pass_auth": mapping.pop("pass_auth", None),
+            "meta": mapping.pop("meta", {}),
+        }
+        return cls(**known, extra=mapping)
 
 
 @dataclass(slots=True)

@@ -127,6 +127,7 @@ def sample_proxy_host() -> dict[str, object]:
             "created_on": "2024-01-01T00:00:00Z",
             "modified_on": "2024-01-02T00:00:00Z",
             "owner_user_id": 1,
+            "is_deleted": False,
             "name": "internal",
             "meta": {"satisfy_any": False},
         },
@@ -208,7 +209,43 @@ def test_login_and_list_proxy_hosts(
     assert hosts[0].owner is not None
     assert hosts[0].certificate is not None
     assert hosts[0].certificate.meta.dns_provider == "cloudflare"
+    assert hosts[0].access_list is not None
+    assert hosts[0].access_list.is_deleted is False
     assert opener.requests[1].headers["Authorization"] == "Bearer abc123"
+
+
+def test_access_list_preserves_unknown_fields(
+    auth_response: dict[str, str], sample_proxy_host: dict[str, object]
+) -> None:
+    sample_proxy_host["access_list"] = {
+        "id": 7,
+        "created_on": "2024-01-01T00:00:00Z",
+        "modified_on": "2024-01-02T00:00:00Z",
+        "owner_user_id": 1,
+        "is_deleted": False,
+        "name": "internal",
+        "meta": {},
+        "clients": [{"id": 10, "address": "10.0.0.0/8"}],
+    }
+    opener = DummyOpener(
+        [
+            DummyResponse(200, auth_response),
+            DummyResponse(200, [sample_proxy_host]),
+        ]
+    )
+    client = NginxProxyManagerClient(
+        "http://npm.local",
+        email="admin@example.com",
+        password="secret",
+        opener=opener,
+    )
+
+    hosts = client.proxy_hosts.list(expand=["access_list"])
+
+    assert hosts[0].access_list is not None
+    assert hosts[0].access_list.extra == {
+        "clients": [{"id": 10, "address": "10.0.0.0/8"}]
+    }
 
 
 def test_login_with_explicit_credentials_overrides_defaults(
