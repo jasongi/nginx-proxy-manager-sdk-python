@@ -2,6 +2,10 @@
 
 A modern Python SDK for the [Nginx Proxy Manager](https://nginxproxymanager.com/) API.
 
+> **Note:** This library was originally ported from the TypeScript
+> [nginx-proxy-manager-sdk](https://github.com/aalasolutions/nginx-proxy-manager-sdk)
+> by aalasolutions.
+
 ## Features
 
 - Typed, Pythonic client interface with resource-oriented APIs
