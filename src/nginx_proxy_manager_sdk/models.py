@@ -152,4 +152,45 @@ class Certificate:
     owner: Owner | None = None
 
 
+@dataclass(slots=True)
+class RedirectionHost:
+    id: int
+    created_on: str
+    modified_on: str
+    owner_user_id: int
+    domain_names: list[str]
+    forward_scheme: Scheme
+    forward_domain_name: str
+    forward_http_code: int
+    preserve_path: bool
+    certificate_id: int
+    ssl_forced: bool
+    block_exploits: bool
+    advanced_config: str
+    meta: dict[str, Any]
+    http2_support: bool
+    enabled: bool
+    hsts_enabled: bool
+    hsts_subdomains: bool
+    owner: Owner | None = None
+    certificate: "Certificate" | None = None
+
+
+@dataclass(slots=True)
+class Stream:
+    id: int
+    created_on: str
+    modified_on: str
+    owner_user_id: int
+    incoming_port: int
+    forwarding_host: str
+    forwarding_port: int
+    tcp_forwarding: bool
+    udp_forwarding: bool
+    certificate_id: int
+    enabled: bool
+    meta: dict[str, Any]
+    owner: Owner | None = None
+
+
 TestHttpResult = dict[str, str]

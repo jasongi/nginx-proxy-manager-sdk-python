@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from .client import NginxProxyManagerClient
 
-from .models import Certificate, ProxyHost, TestHttpResult
+from .models import Certificate, ProxyHost, RedirectionHost, Stream, TestHttpResult
 from .validation import validate_advanced_config, validate_domain_names
 
 CERT_TIMEOUT = 900.0
@@ -121,3 +121,106 @@ class CertificatesAPI:
         return self._client._request(
             "POST", "/api/nginx/certificates/test-http", json={"domains": domains}
         )
+
+
+class RedirectionHostsAPI:
+    """Operations for `/api/nginx/redirection-hosts`."""
+
+    def __init__(self, client: "NginxProxyManagerClient"):
+        self._client = client
+
+    def list(
+        self, *, expand: list[str] | None = None, query: str | None = None
+    ) -> list[RedirectionHost]:
+        params = self._client._expand_params(expand=expand, query=query)
+        data = self._client._request(
+            "GET", "/api/nginx/redirection-hosts", params=params
+        )
+        return [self._client._parse_redirection_host(item) for item in data]
+
+    def get(
+        self, redirection_host_id: int, *, expand: list[str] | None = None
+    ) -> RedirectionHost:
+        data = self._client._request(
+            "GET",
+            f"/api/nginx/redirection-hosts/{redirection_host_id}",
+            params=self._client._expand_params(expand=expand),
+        )
+        return self._client._parse_redirection_host(data)
+
+    def create(self, **payload: Any) -> RedirectionHost:
+        self._validate_redirect_payload(payload)
+        data = self._client._request(
+            "POST", "/api/nginx/redirection-hosts", json=payload
+        )
+        return self._client._parse_redirection_host(data)
+
+    def update(self, redirection_host_id: int, **payload: Any) -> RedirectionHost:
+        self._validate_redirect_payload(payload)
+        data = self._client._request(
+            "PUT",
+            f"/api/nginx/redirection-hosts/{redirection_host_id}",
+            json=payload,
+        )
+        return self._client._parse_redirection_host(data)
+
+    def delete(self, redirection_host_id: int) -> bool:
+        return self._client._request(
+            "DELETE", f"/api/nginx/redirection-hosts/{redirection_host_id}"
+        )
+
+    def enable(self, redirection_host_id: int) -> bool:
+        return self._client._request(
+            "POST", f"/api/nginx/redirection-hosts/{redirection_host_id}/enable"
+        )
+
+    def disable(self, redirection_host_id: int) -> bool:
+        return self._client._request(
+            "POST", f"/api/nginx/redirection-hosts/{redirection_host_id}/disable"
+        )
+
+    @staticmethod
+    def _validate_redirect_payload(payload: dict[str, Any]) -> None:
+        validate_domain_names(payload.get("domain_names"))
+        validate_advanced_config(payload.get("advanced_config"))
+
+
+class StreamsAPI:
+    """Operations for `/api/nginx/streams`."""
+
+    def __init__(self, client: "NginxProxyManagerClient"):
+        self._client = client
+
+    def list(
+        self, *, expand: list[str] | None = None, query: str | None = None
+    ) -> list[Stream]:
+        params = self._client._expand_params(expand=expand, query=query)
+        data = self._client._request("GET", "/api/nginx/streams", params=params)
+        return [self._client._parse_stream(item) for item in data]
+
+    def get(self, stream_id: int, *, expand: list[str] | None = None) -> Stream:
+        data = self._client._request(
+            "GET",
+            f"/api/nginx/streams/{stream_id}",
+            params=self._client._expand_params(expand=expand),
+        )
+        return self._client._parse_stream(data)
+
+    def create(self, **payload: Any) -> Stream:
+        data = self._client._request("POST", "/api/nginx/streams", json=payload)
+        return self._client._parse_stream(data)
+
+    def update(self, stream_id: int, **payload: Any) -> Stream:
+        data = self._client._request(
+            "PUT", f"/api/nginx/streams/{stream_id}", json=payload
+        )
+        return self._client._parse_stream(data)
+
+    def delete(self, stream_id: int) -> bool:
+        return self._client._request("DELETE", f"/api/nginx/streams/{stream_id}")
+
+    def enable(self, stream_id: int) -> bool:
+        return self._client._request("POST", f"/api/nginx/streams/{stream_id}/enable")
+
+    def disable(self, stream_id: int) -> bool:
+        return self._client._request("POST", f"/api/nginx/streams/{stream_id}/disable")

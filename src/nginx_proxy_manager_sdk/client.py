@@ -18,9 +18,11 @@ from .models import (
     Owner,
     ProxyHost,
     ProxyHostLocation,
+    RedirectionHost,
+    Stream,
     TokenResponse,
 )
-from .resources import CertificatesAPI, ProxyHostsAPI
+from .resources import CertificatesAPI, ProxyHostsAPI, RedirectionHostsAPI, StreamsAPI
 
 
 @dataclass(slots=True)
@@ -55,6 +57,8 @@ class NginxProxyManagerClient:
         self._opener = opener or build_opener()
         self.proxy_hosts = ProxyHostsAPI(self)
         self.certificates = CertificatesAPI(self)
+        self.redirection_hosts = RedirectionHostsAPI(self)
+        self.streams = StreamsAPI(self)
 
     def login(
         self, *, email: str | None = None, password: str | None = None
@@ -219,6 +223,55 @@ class NginxProxyManagerClient:
             domain_names=data["domain_names"],
             expires_on=data["expires_on"],
             meta=CertificateMeta.from_mapping(data.get("meta")),
+            owner=NginxProxyManagerClient._parse_owner(data.get("owner")),
+        )
+
+    @staticmethod
+    @staticmethod
+    def _parse_redirection_host(data: dict[str, Any]) -> RedirectionHost:
+        certificate_data = data.get("certificate")
+        return RedirectionHost(
+            id=data["id"],
+            created_on=data["created_on"],
+            modified_on=data["modified_on"],
+            owner_user_id=data["owner_user_id"],
+            domain_names=data["domain_names"],
+            forward_scheme=data["forward_scheme"],
+            forward_domain_name=data["forward_domain_name"],
+            forward_http_code=data["forward_http_code"],
+            preserve_path=data["preserve_path"],
+            certificate_id=data["certificate_id"],
+            ssl_forced=data["ssl_forced"],
+            block_exploits=data["block_exploits"],
+            advanced_config=data["advanced_config"],
+            meta=data.get("meta", {}),
+            http2_support=data["http2_support"],
+            enabled=data["enabled"],
+            hsts_enabled=data["hsts_enabled"],
+            hsts_subdomains=data["hsts_subdomains"],
+            owner=NginxProxyManagerClient._parse_owner(data.get("owner")),
+            certificate=(
+                NginxProxyManagerClient._parse_certificate(certificate_data)
+                if certificate_data
+                else None
+            ),
+        )
+
+    @staticmethod
+    def _parse_stream(data: dict[str, Any]) -> Stream:
+        return Stream(
+            id=data["id"],
+            created_on=data["created_on"],
+            modified_on=data["modified_on"],
+            owner_user_id=data["owner_user_id"],
+            incoming_port=data["incoming_port"],
+            forwarding_host=data["forwarding_host"],
+            forwarding_port=data["forwarding_port"],
+            tcp_forwarding=data["tcp_forwarding"],
+            udp_forwarding=data["udp_forwarding"],
+            certificate_id=data["certificate_id"],
+            enabled=data["enabled"],
+            meta=data.get("meta", {}),
             owner=NginxProxyManagerClient._parse_owner(data.get("owner")),
         )
 

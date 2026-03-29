@@ -12,6 +12,8 @@ from .models import (
     CertificateMeta,
     ProxyHost,
     ProxyHostLocation,
+    RedirectionHost,
+    Stream,
     TokenResponse,
 )
 
@@ -24,6 +26,8 @@ __all__ = [
     "NpmApiError",
     "ProxyHost",
     "ProxyHostLocation",
+    "RedirectionHost",
+    "Stream",
     "TokenResponse",
     "TwoFactorAuthRequiredError",
 ]
