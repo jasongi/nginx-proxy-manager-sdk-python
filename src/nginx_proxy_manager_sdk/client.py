@@ -227,7 +227,6 @@ class NginxProxyManagerClient:
         )
 
     @staticmethod
-    @staticmethod
     def _parse_redirection_host(data: dict[str, Any]) -> RedirectionHost:
         certificate_data = data.get("certificate")
         return RedirectionHost(
