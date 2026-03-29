@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Mapping
@@ -23,6 +24,8 @@ from .models import (
     TokenResponse,
 )
 from .resources import CertificatesAPI, ProxyHostsAPI, RedirectionHostsAPI, StreamsAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -148,14 +151,20 @@ class NginxProxyManagerClient:
         body = json.dumps(json_body).encode("utf-8") if json_body is not None else None
         request = Request(url, data=body, headers=headers, method=method)
 
+        logger.debug("%s %s", method, url)
+        if json_body is not None:
+            logger.debug("  request body: %s", json.dumps(json_body))
+
         try:
             with self._opener.open(
                 request, timeout=timeout or self._timeout
             ) as response:
                 payload = response.read()
+                logger.debug("  response %d (%d bytes)", response.status, len(payload))
                 return self._decode_response(_HttpResponse(response.status, payload))
         except HTTPError as exc:
             payload = exc.read()
+            logger.debug("  response error %d", exc.code)
             raise NpmApiError(exc.code, self._decode_error_body(payload)) from exc
         except URLError as exc:
             raise ConnectionError(str(exc.reason)) from exc
@@ -205,7 +214,10 @@ class NginxProxyManagerClient:
 
     @staticmethod
     def _parse_owner(data: dict[str, Any] | None) -> Owner | None:
-        return Owner(**data) if data else None
+        if not data:
+            return None
+        known = {k: data[k] for k in Owner.__dataclass_fields__ if k in data}
+        return Owner(**known)
 
     @staticmethod
     def _parse_access_list(data: dict[str, Any] | None) -> AccessList | None:
