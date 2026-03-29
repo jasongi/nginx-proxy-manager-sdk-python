@@ -300,6 +300,7 @@ class NginxProxyManagerClient:
             enabled=data["enabled"],
             meta=data.get("meta", {}),
             locations=locations,
+            trust_forwarded_proto=bool(data.get("trust_forwarded_proto", False)),
             owner=NginxProxyManagerClient._parse_owner(data.get("owner")),
             certificate=(
                 NginxProxyManagerClient._parse_certificate(certificate_data)

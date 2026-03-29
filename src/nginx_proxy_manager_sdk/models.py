@@ -133,6 +133,7 @@ class ProxyHost:
     enabled: bool
     meta: dict[str, Any]
     locations: list[ProxyHostLocation]
+    trust_forwarded_proto: bool = False
     owner: Owner | None = None
     certificate: "Certificate" | None = None
     access_list: AccessList | None = None
