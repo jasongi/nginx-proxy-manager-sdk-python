@@ -25,7 +25,7 @@ class ProxyHostLocation:
     forward_scheme: Scheme
     forward_host: str
     forward_port: int
-    forward_path: str | None = None
+    forward_path: str = ""
     advanced_config: str | None = None
 
 
